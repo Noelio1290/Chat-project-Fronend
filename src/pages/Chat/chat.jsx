@@ -3,7 +3,8 @@ import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { allUsersRoute } from "../../utils/APIRoutes.js";
-import Contacts from "../../components/Contacts/contacts.jsx"
+import Contacts from "../../components/Contacts/contacts.jsx";
+import ChatContainer from "../../components/ChatContainer/chatContainer.jsx";
 
 function Chat() {
   const navigate = useNavigate();
@@ -32,7 +33,6 @@ function Chat() {
       if (currentUser && currentUser._id) {
         //llamo a la api pasando mi ID para que excluya de la lista
         const data = await axios.get(`${allUsersRoute}/${currentUser._id}`)
-        console.log(data)
         setContacts(data.data)
       }
     };
@@ -62,14 +62,7 @@ function Chat() {
              <h3>Selecciona un chat para comenzar a escribir.</h3>
           </div>
         ) : (
-          // Si SÍ has seleccionado a alguien:
-          <div className="chat-area">
-             {currentChat && (
-                <div className="header-placeholder">
-                    <h2>Chat con <span style={{color: "#ffd700"}}>{currentChat.name}</span></h2>
-                </div>
-             )}
-          </div>
+          <ChatContainer currentChat={currentChat} currentUser={currentUser} />
         )}
       </div>
     </Container>
