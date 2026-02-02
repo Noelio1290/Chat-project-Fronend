@@ -4,22 +4,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { registerRoute } from "../../utils/APIRoutes";
+import { loginRoute } from "../../utils/APIRoutes";
 
-function Register() {
+function Login() {
   const navigate = useNavigate();
   
-  // Estado para guardar los datos del formulario
   const [values, setValues] = useState({
-    name: "",
-    lastName: "",
-    maternalLastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
 
-  // Configuración de las alertas visuales
   const toastOptions = {
     position: "bottom-right",
     autoClose: 8000,
@@ -28,36 +22,21 @@ function Register() {
     theme: "dark",
   };
 
-  // Validaciones antes de enviar al servidor
+  // Validación simplificada para Login
   const handleValidation = () => {
-    const { password, confirmPassword, name, email } = values;
-    if (password !== confirmPassword) {
-      toast.error("Las contraseñas no coinciden.", toastOptions);
-      return false;
-    } else if (name.length < 2) {
-      toast.error("El nombre debe tener al menos 2 caracteres.", toastOptions);
-      return false;
-    } else if (password.length < 8) {
-      toast.error("La contraseña debe tener al menos 8 caracteres.", toastOptions);
-      return false;
-    } else if (email === "") {
-      toast.error("El correo es obligatorio.", toastOptions);
+    const { password, email } = values;
+    if (password === "" || email === "") {
+      toast.error("Correo y contraseña son requeridos.", toastOptions);
       return false;
     }
     return true;
   };
 
-  // Envío del formulario
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (handleValidation()) {
-      const { name, lastName, maternalLastName, email, password } = values;
-      
-      // Llamada a la API (Backend)
-      const { data } = await axios.post(registerRoute, {
-        name,
-        lastName,
-        maternalLastName,
+      const { email, password } = values;
+      const { data } = await axios.post(loginRoute, {
         email,
         password,
       });
@@ -66,9 +45,9 @@ function Register() {
         toast.error(data.msg, toastOptions);
       }
       if (data.status === true) {
-        // Guardamos el usuario en el navegador
+        // Guardamos la sesión en el navegador
         localStorage.setItem("chat-app-user", JSON.stringify(data.user));
-        navigate("/"); // Redirigimos al chat
+        navigate("/"); // Mandamos al usuario al chat principal
       }
     }
   };
@@ -80,34 +59,17 @@ function Register() {
   return (
     <>
       <FormContainer>
-        <form className="form" onSubmit={(event) => handleSubmit(event)}>
+        <form onSubmit={(event) => handleSubmit(event)}>
           <div className="brand">
             <h1>SupportLive</h1>
-            <h2>register</h2>
+            <h2>sig-in</h2>
           </div>
-          <input
-            type="text"
-            placeholder="Nombre"
-            name="name"
-            onChange={(e) => handleChange(e)}
-          />
-          <input
-            type="text"
-            placeholder="Apellido Paterno"
-            name="lastName"
-            onChange={(e) => handleChange(e)}
-          />
-          <input
-            type="text"
-            placeholder="Apellido Materno"
-            name="maternalLastName"
-            onChange={(e) => handleChange(e)}
-          />
           <input
             type="email"
             placeholder="Correo Electrónico"
             name="email"
             onChange={(e) => handleChange(e)}
+            min="3"
           />
           <input
             type="password"
@@ -115,15 +77,9 @@ function Register() {
             name="password"
             onChange={(e) => handleChange(e)}
           />
-          <input
-            type="password"
-            placeholder="Confirmar Contraseña"
-            name="confirmPassword"
-            onChange={(e) => handleChange(e)}
-          />
-          <button type="submit">Crear Usuario</button>
+          <button type="submit">Iniciar Sesión</button>
           <span>
-            ¿Ya tienes cuenta? <Link to="/login">Inicia Sesión</Link>
+            ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
           </span>
         </form>
       </FormContainer>
@@ -132,46 +88,43 @@ function Register() {
   );
 }
 
-// Estilos CSS dentro de JS (Styled Components)
 const FormContainer = styled.div`
   height: 97vh;
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 1rem;
   align-items: center;
-  background-color: #000000;
-  .form {
-    display: flex;
-
-  }
+  background-color: #131324;
   .brand {
     display: flex;
     align-items: center;
-    color: white;
-    text-transform: uppercase;
+    gap: 1rem;
     justify-content: center;
+    h1 {
+      color: white;
+      text-transform: uppercase;
+    }
+    h2 {
+      color: white;
+      text-transform: uppercase;
+    }
   }
   form {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 60%;
-    height: 85vh;
     flex-direction: column;
-    gap: 1rem;
-    background-color: #4f4f4fb2;
-    border-radius: 20px;
+    gap: 2rem;
+    background-color: #00000076;
+    border-radius: 2rem;
+    padding: 3rem 5rem;
     input {
-      display: flex;
-      justify-content: center;
-      align-items: center;
       background-color: transparent;
-      size: 15px;
+      padding: 1rem;
       border: 0.1rem solid #4e0eff;
       border-radius: 0.4rem;
       color: white;
-      width: 80%;
+      width: 100%;
       font-size: 1rem;
       &:focus {
         border: 0.1rem solid #997af0;
@@ -205,4 +158,4 @@ const FormContainer = styled.div`
   }
 `;
 
-export default Register;
+export default Login;
