@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { allUsersRoute } from "../../utils/APIRoutes.js";
+import Contacts from "../../components/Contacts/contacts.jsx"
 
 function Chat() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(undefined);
+  const [contacts, setContacts] = useState([]); //lista de amigos
+  const [currentChat, setCurrentChat] = useState(undefined); //con quien hablo
+  const [isLoaded, setIsLoaded] = useState(false); //???
+
 
   // 1. SEGURIDAD: Si no hay usuario en localStorage, al Login.
   useEffect(() => {
@@ -12,26 +19,63 @@ function Chat() {
       if (!localStorage.getItem("chat-app-user")) {
         navigate("/login");
       } else {
-        setCurrentUser( JSON.parse(localStorage.getItem("chat-app-user")).name  );
+        setCurrentUser( JSON.parse(localStorage.getItem("chat-app-user")) );
+        setIsLoaded(true)
       }
     };
     checkUser();
   }, [navigate]);
 
+  // 2. Cargar mis contacto
+  useEffect(() => {
+    const getContacts = async () => {
+      if (currentUser && currentUser._id) {
+        //llamo a la api pasando mi ID para que excluya de la lista
+        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`)
+        console.log(data)
+        setContacts(data.data)
+      }
+    };
+    getContacts();
+  }, [currentUser]);
+
+  const handleChatChange = (chat) => {
+    setCurrentChat(chat)
+  };
+
+
+
   return (
     <Container>
       <div className="container">
-        {/* Aquí irán nuestros componentes pronto (Lista de Contactos y Caja de Chat) */}
-        <div className="placeholder-content">
-          <h1 className="welcome-text">
-            Bienvenido, <span>{currentUser}</span>
-          </h1>
-          <p>Selecciona un chat para comenzar</p>
-        </div>
+        <Contacts
+          contacts={contacts}
+          currentUser={currentUser}
+          changeChat={handleChatChange}
+        />
+
+        {/* Panel Derecho: Lógica de visualización */}
+        {isLoaded && currentChat === undefined ? (
+          // Si NO has seleccionado a nadie:
+          <div className="welcome">
+             <h1>Hola, <span>{currentUser?.name}</span>!</h1>
+             <h3>Selecciona un chat para comenzar a escribir.</h3>
+          </div>
+        ) : (
+          // Si SÍ has seleccionado a alguien:
+          <div className="chat-area">
+             {currentChat && (
+                <div className="header-placeholder">
+                    <h2>Chat con <span style={{color: "#ffd700"}}>{currentChat.name}</span></h2>
+                </div>
+             )}
+          </div>
+        )}
       </div>
     </Container>
   );
 }
+
 
 const Container = styled.div`
   height: 100vh;
@@ -41,18 +85,16 @@ const Container = styled.div`
   justify-content: center;
   gap: 1rem;
   align-items: center;
-  background-color: #0d0d0d; /* Negro Profundo (Fondo de pantalla) */
+  background-color: #0d0d0d;
   
   .container {
     height: 85vh;
     width: 85vw;
-    background-color: #000000; /* Negro Puro (La caja del chat) */
+    background-color: #000000;
     display: grid;
-    grid-template-columns: 25% 75%; /* Espacio para barra lateral y chat */
-    
-    /* EL TOQUE DE ORO Y PLATA */
-    border: 1px solid #ffd700; /* Borde Dorado Fino */
-    box-shadow: 0 0 20px #ffd70020; /* Resplandor dorado suave */
+    grid-template-columns: 25% 75%;
+    border: 1px solid #ffd700;
+    box-shadow: 0 0 20px #ffd70020;
     border-radius: 10px;
     
     @media screen and (min-width: 720px) and (max-width: 1080px) {
@@ -60,22 +102,22 @@ const Container = styled.div`
     }
   }
 
-  /* Esto es temporal para que veas algo bonito ahora */
-  .placeholder-content {
-    grid-column: 1 / span 2; 
+  .welcome {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    color: #c0c0c0; /* Texto Plateado */
-    
-    .welcome-text {
-      font-size: 2rem;
-      span {
-        color: #ffd700; /* Nombre en Dorado */
-        text-transform: capitalize;
-      }
+    align-items: center;
+    flex-direction: column;
+    color: white;
+    span {
+      color: #ffd700;
     }
+  }
+
+  .chat-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #c0c0c0;
   }
 `;
 
