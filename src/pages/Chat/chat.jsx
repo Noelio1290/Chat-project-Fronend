@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { allUsersRoute } from "../../utils/APIRoutes.js";
+import { allUsersRoute, host } from "../../utils/APIRoutes.js";
 import Contacts from "../../components/Contacts/contacts.jsx";
 import ChatContainer from "../../components/ChatContainer/chatContainer.jsx";
+import { io } from "socket.io-client"
 
 function Chat() {
   const navigate = useNavigate();
+  const socket = useRef();
   const [currentUser, setCurrentUser] = useState(undefined);
   const [contacts, setContacts] = useState([]); //lista de amigos
   const [currentChat, setCurrentChat] = useState(undefined); //con quien hablo
@@ -27,13 +29,28 @@ function Chat() {
     checkUser();
   }, [navigate]);
 
-  // 2. Cargar mis contacto
+  //2. Conectar socket
+  useEffect(() => {
+    if(currentUser) {
+      //Nos conectamos al servidor (localhost:5000)
+      socket.current = io(host);
+      //Le decimos al servidor: "Hola, soy este usuario y acabo de entrar"
+      socket.current.emit("add-user", currentUser._id);
+    }
+  }, [currentUser]);
+
+
+
+
+  // 3. Cargar mis contacto
   useEffect(() => {
     const getContacts = async () => {
-      if (currentUser && currentUser._id) {
-        //llamo a la api pasando mi ID para que excluya de la lista
-        const data = await axios.get(`${allUsersRoute}/${currentUser._id}`)
-        setContacts(data.data)
+      if (currentUser) {
+        if(currentUser.isAvatarImageSet || !currentUser.isAvatarImageSet) {
+          //llamo a la api pasando mi ID para que excluya de la lista
+          const data = await axios.get(`${allUsersRoute}/${currentUser._id}`)
+          setContacts(data.data)
+        }
       }
     };
     getContacts();
@@ -62,7 +79,7 @@ function Chat() {
              <h3>Selecciona un chat para comenzar a escribir.</h3>
           </div>
         ) : (
-          <ChatContainer currentChat={currentChat} currentUser={currentUser} />
+          <ChatContainer currentChat={currentChat} currentUser={currentUser} socket={socket} />
         )}
       </div>
     </Container>

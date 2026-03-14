@@ -7,9 +7,10 @@ import axios from "axios";
 import { sendMessageRoute, getAllMessageRoute } from "../../utils/APIRoutes.js";
 import { v4 as uuidv4 } from "uuid";
 
-export default function ChatContainer({ currentChat, currentUser }) {
+export default function ChatContainer({ currentChat, currentUser, socket }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]); // Aquí guardamos los mensajes
+  const [arrivalMessage, setArrivalMessage] = useState(null); //estado para mensaje entrante
   const scrollRef = useRef(); // Para el autoscroll
 
   // 1. CARGAR MENSAJES: Cada vez que cambiamos de chat, traemos el historial
@@ -35,11 +36,35 @@ export default function ChatContainer({ currentChat, currentUser }) {
       message: msg,
     });
 
+    // Se emite el mensaje por el socket
+    socket.current.emit("send-msg", {
+      to: currentChat._id,
+      from: currentUser._id,
+      msg: msg,
+    });
+
     // B) Actualizar la vista inmediatamente (sin recargar)
     const msgs = [...messages];
     msgs.push({ fromSelf: true, message: msg });
     setMessages(msgs);
   };
+
+
+  //Se escucha mensaje que llega
+  useEffect(() => {
+    if(socket.current) {
+      socket.current.on("msg-receive", (msg) => {
+        setArrivalMessage({ fromSelf: false, message: msg })
+      });
+    }
+  }, [socket]);
+
+  //Se actualiza la lista de mensajes con los nuevos
+  useEffect(() => {
+    if(arrivalMessage) {
+      setMessages((prev) => [...prev, arrivalMessage]);
+    }
+  }, [arrivalMessage]);
 
   // 3. LOGOUT
   const handleLogout = () => {
